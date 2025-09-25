@@ -1,0 +1,418 @@
+---
+openapi: 3.0.1
+info:
+  title: API V1
+  version: v1
+paths:
+  "/bmi_calculations/calculate":
+    post:
+      summary: Рассчитать BMI пациента
+      tags:
+      - BMI Расчет
+      parameters: []
+      responses:
+        '200':
+          description: BMI успешно рассчитан
+          content:
+            application/json:
+              examples:
+                example_0:
+                  value:
+                    patient_id: 1
+                    patient_name: Иван Петров
+                    weight: 70
+                    height: 175
+                    bmi: 22.86
+                    category: Normal weight
+        '404':
+          description: Пациент не найден
+          content:
+            application/json:
+              examples:
+                example_0:
+                  value:
+                    error: Пациент не найден
+        '503':
+          description: Внешний сервис недоступен
+          content:
+            application/json:
+              examples:
+                example_0:
+                  value:
+                    error: Не удалось получить данные от внешнего сервиса
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                patient_id:
+                  type: integer
+                  example: 1
+              required:
+              - patient_id
+  "/bmr_calculations/calculate":
+    post:
+      summary: Расчитать BMR
+      tags:
+      - BMR Calculations
+      description: Calculate BMR (Basal Metabolic Rate) for a patient
+      parameters: []
+      responses:
+        '200':
+          description: successful calculation
+        '400':
+          description: validation error
+        '404':
+          description: patient not found
+        '422':
+          description: calculation error
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                patient_id:
+                  type: integer
+                  description: ID of the patient
+                formula:
+                  type: string
+                  enum:
+                  - mifflin
+                  - harris_benedict
+                  description: 'Formula to use for calculation (default: mifflin)'
+              required:
+              - patient_id
+  "/bmr_calculations/history":
+    get:
+      summary: История BMR
+      tags:
+      - BMR Calculations
+      description: Get BMR calculation history for a patient
+      parameters:
+      - name: patient_id
+        in: query
+        required: true
+        description: ID of the patient
+        schema:
+          type: integer
+      - name: limit
+        in: query
+        required: false
+        description: 'Number of records per page (default: 10)'
+        schema:
+          type: integer
+      - name: offset
+        in: query
+        required: false
+        description: 'Offset for pagination (default: 0)'
+        schema:
+          type: integer
+      responses:
+        '200':
+          description: successful
+        '404':
+          description: patient not found
+  "/doctors":
+    get:
+      summary: list doctors
+      tags:
+      - Doctors
+      description: Get list of doctors with pagination
+      parameters:
+      - name: limit
+        in: query
+        required: false
+        description: 'Number of doctors per page (default: 10)'
+        schema:
+          type: integer
+      - name: offset
+        in: query
+        required: false
+        description: 'Offset for pagination (default: 0)'
+        schema:
+          type: integer
+      responses:
+        '200':
+          description: successful
+    post:
+      summary: create doctor
+      tags:
+      - Doctors
+      description: Create a new doctor
+      parameters: []
+      responses:
+        '201':
+          description: doctor created
+        '422':
+          description: invalid request
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                first_name:
+                  type: string
+                last_name:
+                  type: string
+                middle_name:
+                  type: string
+              required:
+              - first_name
+              - last_name
+  "/doctors/{id}":
+    parameters:
+    - name: id
+      in: path
+      description: Doctor ID
+      required: true
+      schema:
+        type: integer
+    get:
+      summary: show doctor
+      tags:
+      - Doctors
+      description: Get doctor by ID
+      responses:
+        '200':
+          description: successful
+        '404':
+          description: doctor not found
+    patch:
+      summary: update doctor
+      tags:
+      - Doctors
+      description: Update doctor
+      parameters: []
+      responses:
+        '200':
+          description: successful
+        '422':
+          description: invalid request
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                first_name:
+                  type: string
+                last_name:
+                  type: string
+                middle_name:
+                  type: string
+    put:
+      summary: update doctor
+      tags:
+      - Doctors
+      description: Update doctor
+      parameters: []
+      responses:
+        '200':
+          description: successful
+        '422':
+          description: invalid request
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                first_name:
+                  type: string
+                last_name:
+                  type: string
+                middle_name:
+                  type: string
+    delete:
+      summary: delete doctor
+      tags:
+      - Doctors
+      description: Delete doctor
+      responses:
+        '204':
+          description: successful
+        '404':
+          description: doctor not found
+  "/patients":
+    get:
+      summary: list patients
+      tags:
+      - Patients
+      description: Get list of patients with filtering and pagination
+      parameters:
+      - name: full_name
+        in: query
+        required: false
+        description: Filter by full name (first, last, or middle name)
+        schema:
+          type: string
+      - name: gender
+        in: query
+        required: false
+        description: Filter by gender
+        schema:
+          type: string
+      - name: start_age
+        in: query
+        required: false
+        description: Filter by minimum age
+        schema:
+          type: integer
+      - name: end_age
+        in: query
+        required: false
+        description: Filter by maximum age
+        schema:
+          type: integer
+      - name: limit
+        in: query
+        required: false
+        description: 'Number of patients per page (default: 10)'
+        schema:
+          type: integer
+      - name: offset
+        in: query
+        required: false
+        description: 'Offset for pagination (default: 0)'
+        schema:
+          type: integer
+      responses:
+        '200':
+          description: successful
+    post:
+      summary: create patient
+      tags:
+      - Patients
+      description: Create a new patient
+      parameters: []
+      responses:
+        '201':
+          description: patient created
+        '422':
+          description: invalid request
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                first_name:
+                  type: string
+                last_name:
+                  type: string
+                middle_name:
+                  type: string
+                birthday:
+                  type: string
+                  format: date
+                gender:
+                  type: string
+                height:
+                  type: number
+                weight:
+                  type: number
+              required:
+              - first_name
+              - last_name
+              - birthday
+              - gender
+  "/patients/{id}":
+    parameters:
+    - name: id
+      in: path
+      description: Patient ID
+      required: true
+      schema:
+        type: integer
+    get:
+      summary: show patient
+      tags:
+      - Patients
+      description: Get patient by ID with additional calculated fields
+      responses:
+        '200':
+          description: successful
+        '404':
+          description: patient not found
+    patch:
+      summary: update patient
+      tags:
+      - Patients
+      description: Update patient
+      parameters: []
+      responses:
+        '200':
+          description: successful
+        '422':
+          description: invalid request
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                first_name:
+                  type: string
+                last_name:
+                  type: string
+                middle_name:
+                  type: string
+                birthday:
+                  type: string
+                  format: date
+                gender:
+                  type: string
+                height:
+                  type: number
+                weight:
+                  type: number
+    put:
+      summary: update patient
+      tags:
+      - Patients
+      description: Update patient
+      parameters: []
+      responses:
+        '200':
+          description: successful
+        '422':
+          description: invalid request
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                first_name:
+                  type: string
+                last_name:
+                  type: string
+                middle_name:
+                  type: string
+                birthday:
+                  type: string
+                  format: date
+                gender:
+                  type: string
+                height:
+                  type: number
+                weight:
+                  type: number
+    delete:
+      summary: delete patient
+      tags:
+      - Patients
+      description: Delete patient
+      responses:
+        '204':
+          description: successful
+        '404':
+          description: patient not found
+servers:
+- url: https://{defaultHost}
+  variables:
+    defaultHost:
+      default: www.example.com
