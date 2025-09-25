@@ -6,10 +6,10 @@ class BmiCalculationsController < ApplicationController
 
   # POST /bmi_calculations/calculate
   def calculate
-    # Находим пациента
+   
     patient = Patient.find(params[:patient_id])
     
-    # Подготавливаем данные для внешнего API
+    
     height_in_meters = patient.height / 100.0  # переводим см в метры
     
     # Вызываем внешнее API
@@ -35,11 +35,11 @@ class BmiCalculationsController < ApplicationController
   private
 
   def call_external_bmi_api(weight, height)
-    # URL внешнего API
+    
     url = "https://bmicalculatorapi.vercel.app/api/bmi/#{weight}/#{height}"
     uri = URI.parse(url)
     
-    # Подготавливаем GET запрос
+    
     http = Net::HTTP.new(uri.host, uri.port)
     http.use_ssl = true
     
@@ -57,7 +57,7 @@ class BmiCalculationsController < ApplicationController
       nil
     end
   rescue => e
-    # Логируем ошибку, но не прерываем выполнение
+    
     Rails.logger.error "External BMI API error: #{e.message}"
     nil
   end
