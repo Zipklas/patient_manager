@@ -14,6 +14,7 @@ RUN npm install -g yarn
 WORKDIR /patient_manager
 
 # Копируем Gemfile и устанавливаем гемы
+COPY Gemfile /patient_manager/Gemfile
 COPY Gemfile Gemfile.lock ./
 RUN bundle install
 
