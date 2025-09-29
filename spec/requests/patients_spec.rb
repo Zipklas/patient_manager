@@ -1,9 +1,7 @@
 require 'swagger_helper'
 
 RSpec.describe 'patients API', type: :request do
-
   path '/patients' do
-
     get('list patients') do
       tags 'Patients'
       description 'Get list of patients with filtering and pagination'
@@ -13,7 +11,7 @@ RSpec.describe 'patients API', type: :request do
       parameter name: :end_age, in: :query, type: :integer, required: false, description: 'Filter by maximum age'
       parameter name: :limit, in: :query, type: :integer, required: false, description: 'Number of patients per page (default: 10)'
       parameter name: :offset, in: :query, type: :integer, required: false, description: 'Offset for pagination (default: 0)'
-      
+
       response(200, 'successful') do
         schema type: :object,
           properties: {
@@ -74,7 +72,7 @@ RSpec.describe 'patients API', type: :request do
 
     post('create patient') do
       tags 'Patients'
-      description 'Create a new patient'
+      description 'Create a new patient with optional doctor assignments'
       consumes 'application/json'
       parameter name: :patient, in: :body, schema: {
         type: :object,
@@ -85,22 +83,30 @@ RSpec.describe 'patients API', type: :request do
           birthday: { type: :string, format: 'date' },
           gender: { type: :string },
           height: { type: :number },
-          weight: { type: :number }
+          weight: { type: :number },
+          doctor_ids: {
+            type: :array,
+            items: { type: :integer },
+            description: 'Array of doctor IDs to assign to the patient'
+          }
         },
-        required: ['first_name', 'last_name', 'birthday', 'gender']
+        required: [ 'first_name', 'last_name', 'birthday', 'gender', 'height', 'weight' ]
       }
 
       response(201, 'patient created') do
-        let(:patient) { 
-          { 
-            first_name: 'John', 
-            last_name: 'Doe', 
+        let!(:doctor1) { Doctor.create(first_name: 'Doctor1', last_name: 'Smith') }
+        let!(:doctor2) { Doctor.create(first_name: 'Doctor2', last_name: 'Johnson') }
+        let(:patient) {
+          {
+            first_name: 'John',
+            last_name: 'Doe',
             middle_name: 'Smith',
             birthday: '1990-01-01',
             gender: 'male',
             height: 180.5,
-            weight: 75.2
-          } 
+            weight: 75.2,
+            doctor_ids: [ doctor1.id, doctor2.id ]
+          }
         }
 
         after do |example|
@@ -134,7 +140,7 @@ RSpec.describe 'patients API', type: :request do
     get('show patient') do
       tags 'Patients'
       description 'Get patient by ID with additional calculated fields'
-      
+
       response(200, 'successful') do
         schema type: :object,
           properties: {
@@ -166,12 +172,19 @@ RSpec.describe 'patients API', type: :request do
             }
           }
 
-        let(:id) { Patient.create(
-          first_name: 'John', 
-          last_name: 'Doe', 
-          birthday: '1990-01-01',
-          gender: 'male'
-        ).id }
+        let!(:doctor) { Doctor.create(first_name: 'Doctor', last_name: 'Smith') }
+        let(:id) {
+          patient = Patient.create(
+            first_name: 'John',
+            last_name: 'Doe',
+            birthday: '1990-01-01',
+            gender: 'male',
+            height: 180,
+            weight: 75
+          )
+          patient.doctors << doctor
+          patient.id
+        }
 
         after do |example|
           example.metadata[:response][:content] = {
@@ -199,7 +212,7 @@ RSpec.describe 'patients API', type: :request do
 
     patch('update patient') do
       tags 'Patients'
-      description 'Update patient'
+      description 'Update patient with optional doctor assignments'
       consumes 'application/json'
       parameter name: :patient, in: :body, schema: {
         type: :object,
@@ -210,18 +223,35 @@ RSpec.describe 'patients API', type: :request do
           birthday: { type: :string, format: 'date' },
           gender: { type: :string },
           height: { type: :number },
-          weight: { type: :number }
+          weight: { type: :number },
+          doctor_ids: {
+            type: :array,
+            items: { type: :integer },
+            description: 'Array of doctor IDs to assign to the patient'
+          }
         }
       }
 
       response(200, 'successful') do
-        let(:id) { Patient.create(
-          first_name: 'John', 
-          last_name: 'Doe', 
-          birthday: '1990-01-01',
-          gender: 'male'
-        ).id }
-        let(:patient) { { first_name: 'Jane', weight: 80.0 } }
+        let!(:doctor1) { Doctor.create(first_name: 'Doctor1', last_name: 'Smith') }
+        let!(:doctor2) { Doctor.create(first_name: 'Doctor2', last_name: 'Johnson') }
+        let(:id) {
+          Patient.create(
+            first_name: 'John',
+            last_name: 'Doe',
+            birthday: '1990-01-01',
+            gender: 'male',
+            height: 180,
+            weight: 75
+          ).id
+        }
+        let(:patient) {
+          {
+            first_name: 'Jane',
+            weight: 80.0,
+            doctor_ids: [ doctor1.id, doctor2.id ]
+          }
+        }
 
         after do |example|
           example.metadata[:response][:content] = {
@@ -234,12 +264,16 @@ RSpec.describe 'patients API', type: :request do
       end
 
       response(422, 'invalid request') do
-        let(:id) { Patient.create(
-          first_name: 'John', 
-          last_name: 'Doe', 
-          birthday: '1990-01-01',
-          gender: 'male'
-        ).id }
+        let(:id) {
+          Patient.create(
+            first_name: 'John',
+            last_name: 'Doe',
+            birthday: '1990-01-01',
+            gender: 'male',
+            height: 180,
+            weight: 75
+          ).id
+        }
         let(:patient) { { first_name: '' } }
 
         after do |example|
@@ -255,7 +289,7 @@ RSpec.describe 'patients API', type: :request do
 
     put('update patient') do
       tags 'Patients'
-      description 'Update patient'
+      description 'Update patient with optional doctor assignments'
       consumes 'application/json'
       parameter name: :patient, in: :body, schema: {
         type: :object,
@@ -266,25 +300,39 @@ RSpec.describe 'patients API', type: :request do
           birthday: { type: :string, format: 'date' },
           gender: { type: :string },
           height: { type: :number },
-          weight: { type: :number }
+          weight: { type: :number },
+          doctor_ids: {
+            type: :array,
+            items: { type: :integer },
+            description: 'Array of doctor IDs to assign to the patient'
+          }
         }
       }
 
       response(200, 'successful') do
-        let(:id) { Patient.create(
-          first_name: 'John', 
-          last_name: 'Doe', 
-          birthday: '1990-01-01',
-          gender: 'male'
-        ).id }
-        let(:patient) { { 
-          first_name: 'Jane', 
-          last_name: 'Smith',
-          birthday: '1990-01-01',
-          gender: 'female',
-          height: 165.0,
-          weight: 60.0
-        } }
+        let!(:doctor1) { Doctor.create(first_name: 'Doctor1', last_name: 'Smith') }
+        let!(:doctor2) { Doctor.create(first_name: 'Doctor2', last_name: 'Johnson') }
+        let(:id) {
+          Patient.create(
+            first_name: 'John',
+            last_name: 'Doe',
+            birthday: '1990-01-01',
+            gender: 'male',
+            height: 180,
+            weight: 75
+          ).id
+        }
+        let(:patient) {
+          {
+            first_name: 'Jane',
+            last_name: 'Smith',
+            birthday: '1990-01-01',
+            gender: 'female',
+            height: 165.0,
+            weight: 60.0,
+            doctor_ids: [ doctor1.id, doctor2.id ]
+          }
+        }
 
         after do |example|
           example.metadata[:response][:content] = {
@@ -297,12 +345,16 @@ RSpec.describe 'patients API', type: :request do
       end
 
       response(422, 'invalid request') do
-        let(:id) { Patient.create(
-          first_name: 'John', 
-          last_name: 'Doe', 
-          birthday: '1990-01-01',
-          gender: 'male'
-        ).id }
+        let(:id) {
+          Patient.create(
+            first_name: 'John',
+            last_name: 'Doe',
+            birthday: '1990-01-01',
+            gender: 'male',
+            height: 180,
+            weight: 75
+          ).id
+        }
         let(:patient) { { first_name: '' } }
 
         after do |example|
@@ -321,12 +373,16 @@ RSpec.describe 'patients API', type: :request do
       description 'Delete patient'
 
       response(204, 'successful') do
-        let(:id) { Patient.create(
-          first_name: 'John', 
-          last_name: 'Doe', 
-          birthday: '1990-01-01',
-          gender: 'male'
-        ).id }
+        let(:id) {
+          Patient.create(
+            first_name: 'John',
+            last_name: 'Doe',
+            birthday: '1990-01-01',
+            gender: 'male',
+            height: 180,
+            weight: 75
+          ).id
+        }
 
         run_test!
       end

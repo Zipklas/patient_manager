@@ -286,7 +286,7 @@ paths:
       summary: create patient
       tags:
       - Patients
-      description: Create a new patient
+      description: Create a new patient with optional doctor assignments
       parameters: []
       responses:
         '201':
@@ -314,11 +314,18 @@ paths:
                   type: number
                 weight:
                   type: number
+                doctor_ids:
+                  type: array
+                  items:
+                    type: integer
+                  description: Array of doctor IDs to assign to the patient
               required:
               - first_name
               - last_name
               - birthday
               - gender
+              - height
+              - weight
   "/patients/{id}":
     parameters:
     - name: id
@@ -341,7 +348,7 @@ paths:
       summary: update patient
       tags:
       - Patients
-      description: Update patient
+      description: Update patient with optional doctor assignments
       parameters: []
       responses:
         '200':
@@ -369,11 +376,16 @@ paths:
                   type: number
                 weight:
                   type: number
+                doctor_ids:
+                  type: array
+                  items:
+                    type: integer
+                  description: Array of doctor IDs to assign to the patient
     put:
       summary: update patient
       tags:
       - Patients
-      description: Update patient
+      description: Update patient with optional doctor assignments
       parameters: []
       responses:
         '200':
@@ -401,6 +413,11 @@ paths:
                   type: number
                 weight:
                   type: number
+                doctor_ids:
+                  type: array
+                  items:
+                    type: integer
+                  description: Array of doctor IDs to assign to the patient
     delete:
       summary: delete patient
       tags:

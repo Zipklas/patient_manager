@@ -4,7 +4,7 @@ class PatientsController < ApplicationController
   def index
     search_service = PatientSearchService.new(filter_params)
     result = search_service.results_with_metadata
-    
+
     render json: {
       patients: result[:patients].as_json(include: :doctors),
       total_count: result[:total_count],
@@ -18,31 +18,31 @@ class PatientsController < ApplicationController
     patient = Patient.find(params[:id])
     render json: patient.as_json(
       include: :doctors,
-      methods: [:age, :bmi] 
+      methods: [ :age, :bmi ]
     )
   end
 
-  # POST /patients
-  def create
-    patient = Patient.new(patient_params)
-    
-    if patient.save
-      render json: patient, status: :created
-    else
-      render json: { errors: patient.errors.full_messages }, status: :unprocessable_entity
-    end
-  end
+# POST /patients
+def create
+  patient = PatientManagementService.create(patient_params)
 
-  # PATCH/PUT /patients/1
-  def update
-    patient = Patient.find(params[:id])
-    
-    if patient.update(patient_params)
-      render json: patient
-    else
-      render json: { errors: patient.errors.full_messages }, status: :unprocessable_entity
-    end
+  if patient.persisted?
+    render json: patient.as_json(include: :doctors), status: :created
+  else
+    render json: { errors: patient.errors.full_messages }, status: :unprocessable_entity
   end
+end
+
+def update
+  patient = Patient.find(params[:id])
+  patient = PatientManagementService.update(patient, patient_params)
+
+  if patient.valid?
+    render json: patient.as_json(include: :doctors)
+  else
+    render json: { errors: patient.errors.full_messages }, status: :unprocessable_entity
+  end
+end
 
   # DELETE /patients/1
   def destroy
@@ -55,13 +55,13 @@ class PatientsController < ApplicationController
 
   def patient_params
     params.require(:patient).permit(
-      :first_name, :last_name, :middle_name, 
-      :birthday, :gender, :height, :weight
+      :first_name, :last_name, :middle_name,
+      :birthday, :gender, :height, :weight,
+      doctor_ids: []
     )
   end
 
   def filter_params
     params.permit(:full_name, :gender, :start_age, :end_age, :limit, :offset)
   end
-
 end
